@@ -2,47 +2,58 @@ import unittest
 import rest_api
 import time
 
+
 class TestAPIQueries(unittest.TestCase):
-    TESTCASE = "Golf is a car by Volkswagen."
+    TESTDATA = {"single": "I bought a car by Volkswagen.",
+                "minibatch": ["I bought a car by Volkswagen.",
+                                           "The movie is starring Audrey Hepburn in the lead role."],
+                "1000_batch": open("testdata_english.txt", "r").readlines()
+    }
 
-    def test_app_queries(self):
-        test_queries = ["analyze", "classify", "concepts"]
+    # queries taking text arguments for analysis
+    ANALYSIS_QUERIES = ["classify", "concepts", "analyze"]
 
+    #queries providing info about data model
+    DATAMODEL_QUERIES = ["list_topics"]
+
+    def setUp(self):
         rest_api.app.testing = True
-        client = rest_api.app.test_client()
-        for query in test_queries:
-            query_string = rest_api.WEB_PATH + '%s?text=%s' % (query, self.TESTCASE)
-            # test GET requests
-            self.assertEquals(str(client.get(query_string)), "<Response streamed [200 OK]>")
-            # test POST requests
-            self.assertEquals(str(client.post(query_string)), "<Response streamed [200 OK]>")
+        self.app = rest_api.app.test_client()
 
-    def test_performance_of_app_queries(self):
-        test_queries = ["analyze", "classify", "concepts"]
+    def test_responds_to_queries(self):
+        for query in self.ANALYSIS_QUERIES:
+            # single
+            result = self.app.post(rest_api.URL_PREFIX+query, data={"text": self.TESTDATA["single"]})
+            assert "data" in result.data.decode('utf-8')
+            result = self.app.get(rest_api.URL_PREFIX+query, data={"text": self.TESTDATA["single"]})
+            assert "data" in result.data.decode('utf-8')
+            # batch
+            result = self.app.post(rest_api.URL_PREFIX+query, data={"text": self.TESTDATA["minibatch"]})
+            assert "data" in result.data.decode('utf-8')
+            result = self.app.get(rest_api.URL_PREFIX+query, data={"text": self.TESTDATA["minibatch"]})
+            assert "data" in result.data.decode('utf-8')
 
-        rest_api.app.testing = True
-        client = rest_api.app.test_client()
+        for query in self.DATAMODEL_QUERIES:
+            result = self.app.post(rest_api.URL_PREFIX+query, data=None)
+            assert "data" in result.data.decode('utf-8')
+            result = self.app.get(rest_api.URL_PREFIX+query, data=None)
+            assert "data" in result.data.decode('utf-8')
 
-        argument_string = ""
-        test_data = open("testdata_english.txt", "r").readlines()
-        for data_item in test_data:
-            argument_string += "text=%s&" % data_item.strip()
+    def test_batch_performance(self):
+        print("Testing on %d items:" % len(self.TESTDATA["1000_batch"]))
 
-        for query in test_queries:
-            query_string = rest_api.WEB_PATH + '%s?text=%s' % (query, argument_string[:-1])
-
-            # GET
+        for query in self.ANALYSIS_QUERIES:
             start = time.time()
-            get_response = client.get(query_string)
+            _ = self.app.post(rest_api.URL_PREFIX+query, data={"text": self.TESTDATA["1000_batch"]})
             end = time.time()
             elapsed = abs(start - end)
-            print("GET %s on %s items: %s" % (query, str(len(test_data)), str(elapsed)))
-            # POST
+            print("POST/%s: %s" % (query, str(elapsed)))
+
             start = time.time()
-            post_response = client.post(query_string)
+            _ = self.app.get(rest_api.URL_PREFIX+query, data={"text": self.TESTDATA["1000_batch"]})
             end = time.time()
             elapsed = abs(start - end)
-            print("POST %s on %s items: %s" % (query, str(len(test_data)), str(elapsed)))
+            print("GET/%s: %s" % (query, str(elapsed)))
 
 
 if __name__ == "__main__":

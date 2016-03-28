@@ -19,7 +19,6 @@ class KoltextanaResource(Resource):
         """Initialize Flask argument parser and text analyzers."""
         self.parser = reqparse.RequestParser()
         self.parser.add_argument('text', help='Marketing text to analyze', action="append")
-        #self.parser.add_argument('texts', help='Marketing texts to analyze', action="append")
         self.text_analyzer = text_analyzer
 
     def get(self, input_para=None):
@@ -61,10 +60,6 @@ class KoltextanaResource(Resource):
 class TextAnalysisResource(KoltextanaResource):
     """API resource class for text analysis."""
 
-    def __init__(self, text_analyzer):
-        """Initialize Flask argument parser and text analyzers."""
-        super(TextAnalysisResource, self).__init__(text_analyzer)
-
     def build_result(self, input_para):
         """Analyze the input text."""
         text = input_para["text"]
@@ -86,35 +81,15 @@ class TextAnalysisResource(KoltextanaResource):
 
 class ConceptsResource(KoltextanaResource):
     """API resource class for concept extraction."""
-
-    def __init__(self, text_analyzer):
-        super(ConceptsResource, self).__init__(text_analyzer)
-
     def build_result(self, input_para):
         """Analyze the input text."""
         text = input_para["text"]
         result = self.text_analyzer.concepts(text)
         return result
 
-    def get_errors(self, input_para):
-        """Check for input errors."""
-        errors = []
-        if not input_para["text"]:
-            code = "4xx"
-            name = "MissingInputArgument"
-            description = "Please specify a value for 'text'."
-            errors.append({"code": str(code),
-                           "name": name,
-                           "description": description})
-        return errors
-
 
 class ClassifyResource(KoltextanaResource):
     """API resource class for classification."""
-
-    def __init__(self, text_analyzer):
-        super(ClassifyResource, self).__init__(text_analyzer)
-
     def build_result(self, input_para):
         """Analyze the input text."""
         text = input_para["text"]
@@ -123,34 +98,33 @@ class ClassifyResource(KoltextanaResource):
 
 
 class TopicListResource(KoltextanaResource):
-    """API resource class for classification."""
-    def __init__(self, text_analyzer):
-        super(TopicListResource, self).__init__(text_analyzer)
-
-    def build_result(self, input_para):
-        """Analyze the input text."""
-        result = {"topics": self.text_analyzer.industry_dict}
+    """API resource class for info about available topics."""
+    def get(self, input_para=None):
+        """Parse arguments and build result if no errors in input."""
+        result = {}
+        result["data"] = {"topics": self.text_analyzer.industry_dict}
+        result["success"] = True
+        result = jsonify(result)
         return result
 
-    def build_errors(self):
-        pass
+    def post(self, input_para=None):
+        return self.get()
 
 
-WEB_PATH = '/kol/v1.0/'
+URL_PREFIX = '/kol/v1.0/'
 
 app = Flask(__name__)
 cors = CORS(app)
 api = Api(app)
 text_analyzer = koltextana.TextAnalyzer(language="english")
-
-api.add_resource(TextAnalysisResource, WEB_PATH + "analyze", resource_class_args=(text_analyzer,))
-api.add_resource(ClassifyResource, WEB_PATH + "classify", resource_class_args=(text_analyzer,))
-api.add_resource(ConceptsResource, WEB_PATH+"concepts", resource_class_args=(text_analyzer,))
-api.add_resource(TopicListResource, WEB_PATH+"topiclist", resource_class_args=(text_analyzer,))
+api.add_resource(TextAnalysisResource, URL_PREFIX + "analyze", resource_class_args=(text_analyzer,))
+api.add_resource(ClassifyResource, URL_PREFIX + "classify", resource_class_args=(text_analyzer,))
+api.add_resource(ConceptsResource, URL_PREFIX + "concepts", resource_class_args=(text_analyzer,))
+api.add_resource(TopicListResource, URL_PREFIX + "list_topics", resource_class_args=(text_analyzer,))
 
 
 def run_api():
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0', debug=False)
 
 
 if __name__ == "__main__":
