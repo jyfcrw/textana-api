@@ -12,8 +12,8 @@ from flask.ext.restful import Resource
 from flask.ext.cors import CORS
 import operator
 
-from readability import Readability
-import urllib
+from readability    import Readability
+from urllib.request import urlopen
 
 def infer_industries(entities):
     inferred_industries = {}
@@ -113,7 +113,7 @@ class TextAnalysisResource(KoltextanaResource):
         return self.text_analyzer.analyze(text)
 
     def text_extract(self, url):
-        html = urllib.request.urlopen(url).read().decode('utf-8')
+        html = urlopen(url).read().decode('utf-8')
         return Readability(html, url)
 
     def get_errors(self, input_para):
