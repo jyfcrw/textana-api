@@ -46,6 +46,7 @@ class KoltextanaResource(Resource):
         """Initialize Flask argument parser and text analyzers."""
         self.parser = reqparse.RequestParser()
         self.parser.add_argument('text', help='Marketing text to analyze', action="append")
+        self.parser.add_argument('url',  help='Marketing url  to analyze', action="append")
         self.text_analyzer = text_analyzer
 
     def get(self, input_para=None):
