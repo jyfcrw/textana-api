@@ -12,8 +12,7 @@ from flask.ext.restful import Resource
 from flask.ext.cors import CORS
 import operator
 
-from readability    import Readability
-from urllib.request import urlopen
+from newspaper import Article
 
 def infer_industries(entities):
     inferred_industries = {}
@@ -102,10 +101,10 @@ class TextAnalysisResource(KoltextanaResource):
             result = self.text_analyze(text)
         elif input_para["url"]:
             article = self.text_extract(input_para["url"])
-            text = article.title + " " + article.content
-            result = self.text_analyze(text)
-            result["article_text"] = article.content
+            result = self.text_analyze(article.text)
+            result["article_text"] = article.text
             result["article_title"] = article.title
+            result["article_image"] = article.top_image
 
         result["industries"] = format_predictions(result["industries"])
         result["inferred_industries"] = infer_industries(result['entities'])
@@ -115,8 +114,10 @@ class TextAnalysisResource(KoltextanaResource):
         return self.text_analyzer.analyze(text)
 
     def text_extract(self, url):
-        html = urlopen(url).read().decode('utf-8')
-        return Readability(html, url)
+        article = Article(url, language='zh')
+        article.download()
+        article.parse()
+        return article
 
     def get_errors(self, input_para):
         """Check for input errors."""
