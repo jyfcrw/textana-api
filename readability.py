@@ -4,6 +4,8 @@ from __future__ import division
 import os
 import sys
 import re
+import urllib
+from urllib import parse
 from html.parser import HTMLParser
 import math
 import posixpath
@@ -62,6 +64,7 @@ class Readability:
 
         self.title = self.getArticleTitle()
         self.content = self.grabArticle()
+        self.top_image = self.getArticleTopImage()
 
     def removeScript(self):
         for elem in self.html.find_all("script"):
@@ -258,6 +261,17 @@ class Readability:
             pass
 
         return title
+
+    def getArticleTopImage(self):
+        image = ''
+        try:
+            node = BeautifulSoup(self.content, 'html.parser').find('img', src=True)
+            if node:
+                image = node['src']
+        except:
+            pass
+
+        return image
 
     def initializeNode(self, node):
         contentScore = 0

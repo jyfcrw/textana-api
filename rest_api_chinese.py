@@ -104,7 +104,8 @@ class TextAnalysisResource(KoltextanaResource):
             article = self.text_extract(input_para["url"])
             text = article.title + " " + article.content
             result = self.text_analyze(text)
-            result["article_text"] = text
+            result["article_text"] = article.content
+            result["article_title"] = article.title
 
         result["industries"] = format_predictions(result["industries"])
         result["inferred_industries"] = infer_industries(result['entities'])

@@ -1,14 +1,45 @@
 from readability    import Readability
-from urllib.request import urlopen
+import requests
+import chardet
+
+from newspaper import Article
 
 def main():
-    url = "http://mp.weixin.qq.com/s?__biz=MzI4NDE5OTYwMQ==&mid=2247483956&idx=1&sn=aedb65caffb5d8895115a69d95659e37&chksm=ebfe5deadc89d4fc613a5331ba3be829fe1c7a0a5f778755f0c5de1fbef9653f97350956c8a1&scene=1&srcid=0918yQ30NM5pyonyPzZJrEZi&from=singlemessage&isappinstalled=0#wechat_redirect"
-    htmlcode = urlopen(url).read().decode('utf-8')
-    result = Readability(htmlcode, url)
+    url = "http://china.ynet.com/3.1/1610/07/11819034.html"
+
+    print("++++++++++++++++++ Readability ++++++++++++++++++")
+    extract_by_readability(url)
+    print("++++++++++++++++++ Newspaper ++++++++++++++++++")
+    extract_by_newspaper(url)
+
+def extract_by_readability(url):
+    r = requests.get(url)
+    r.close()
+
+    print("Encode: " + r.encoding)
+    print("Apparent Encode" + r.apparent_encoding)
+    if r.encoding != r.apparent_encoding:
+        r.encoding = r.apparent_encoding
+
+    result = Readability(r.text, url)
     print("------------- TITLE --------------")
     print(result.title)
     print("------------- CONTENT --------------")
     print(result.content)
+    print("-------------- IMAGE ---------------")
+    print(result.top_image)
+
+def extract_by_newspaper(url):
+    article = Article(url, language='zh')
+    article.download()
+    article.parse()
+
+    print("------------- TITLE --------------")
+    print(article.title)
+    print("------------- CONTENT --------------")
+    print(article.text)
+    print("-------------- IMAGE ---------------")
+    print(article.top_image)
 
 if __name__ == "__main__":
     main()
