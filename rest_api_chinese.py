@@ -129,6 +129,7 @@ class TextAnalysisResource(KoltextanaResource):
     def fetch_weixin_top_image(self, article):
         img_kwargs = {'tag': 'img', 'attr': 'data-src'}
         img_tags = article.extractor.parser.getElementsByTag(article.clean_doc, **img_kwargs)
+        img_urls = []
 
         if img_tags:
             img_urls = [img_tag.get('data-src')
