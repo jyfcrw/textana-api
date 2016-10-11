@@ -13,6 +13,7 @@ from flask.ext.cors import CORS
 import operator
 
 from newspaper import Article
+import re
 
 def infer_industries(entities):
     inferred_industries = {}
@@ -117,7 +118,25 @@ class TextAnalysisResource(KoltextanaResource):
         article = Article(url, language='zh')
         article.download()
         article.parse()
+
+        if not article.top_image:
+            weixin_reg = re.compile('.*mp.weixin.qq.com.*')
+            if weixin_reg.match(article.url):
+                self.fetch_weixin_top_image(article)
+
         return article
+
+    def fetch_weixin_top_image(self, article):
+        img_kwargs = {'tag': 'img', 'attr': 'data-src'}
+        img_tags = article.extractor.parser.getElementsByTag(article.clean_doc, **img_kwargs)
+
+        if img_tags:
+            img_urls = [img_tag.get('data-src')
+                for img_tag in img_tags if img_tag.get('data-src')]
+
+        if img_urls:
+            article.set_imgs(set(img_urls))
+            article.set_top_img_no_check(img_urls[0])
 
     def get_errors(self, input_para):
         """Check for input errors."""
