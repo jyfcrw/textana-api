@@ -136,8 +136,13 @@ class TextAnalysisResource(KoltextanaResource):
                 for img_tag in img_tags if img_tag.get('data-src')]
 
         if img_urls:
+            top_img_url = img_urls[0]
+
+            if len(img_urls) > 1:
+                top_img_url = img_urls[1]
+
+            article.set_top_img_no_check(top_img_url)
             article.set_imgs(set(img_urls))
-            article.set_top_img_no_check(img_urls[0])
 
     def get_errors(self, input_para):
         """Check for input errors."""
