@@ -3,50 +3,38 @@ import requests
 import chardet
 import re
 
+from extractor import weixin_extractor
 from newspaper import Article
 
 def main():
-    url = "http://mp.weixin.qq.com/s?src=3&timestamp=1476173520&ver=1&signature=8ymboW2EShgCmFhOPbhjW8OKf81t*bz70D3tWEkhXo2voIiZ1tpA99AicD6nDbE8VJrEimQHBilRmqRGzLz02krW-Bpgbsg3uKT*D2dgB3JFxu8koCdQmo5Zy1MVxJZLeRwJD4GLn3RE2JKOHrVWey9OY9EQf8LLROi7TLczm7E="
+    url = "http://mp.weixin.qq.com/s?__biz=MjM5MjIxMTc4OA==&mid=2650763642&idx=1&sn=066a574daec5e9a61bfc221ea9edd2df&scene=0#wechat_redirect"
 
-    print("++++++++++++++++++ Readability ++++++++++++++++++")
-    extract_by_readability(url)
+    # print("++++++++++++++++++ Readability ++++++++++++++++++")
+    # extract_by_readability(url)
     print("++++++++++++++++++ Newspaper ++++++++++++++++++")
     extract_by_newspaper(url)
 
-def extract_by_readability(url):
-    r = requests.get(url)
-    r.close()
+# def extract_by_readability(url):
+#     r = requests.get(url)
+#     r.close()
 
-    print("Encode: " + r.encoding)
-    print("Apparent Encode" + r.apparent_encoding)
-    if r.encoding != r.apparent_encoding:
-        r.encoding = r.apparent_encoding
+#     print("Encode: " + r.encoding)
+#     print("Apparent Encode" + r.apparent_encoding)
+#     if r.encoding != r.apparent_encoding:
+#         r.encoding = r.apparent_encoding
 
-    result = Readability(r.text, url)
-    print("------------- TITLE --------------")
-    print(result.title)
-    print("------------- CONTENT --------------")
-    print(result.content)
-    print("-------------- IMAGE ---------------")
-    print(result.top_image)
+#     result = Readability(r.text, url)
+#     print("------------- TITLE --------------")
+#     print(result.title)
+#     print("------------- CONTENT --------------")
+#     print(result.content)
+#     print("-------------- IMAGE ---------------")
+#     print(result.top_image)
 
-def fetch_weixin_top_image(article):
-    img_kwargs = {'tag': 'img', 'attr': 'data-src'}
-    img_tags = article.extractor.parser.getElementsByTag(article.clean_doc, **img_kwargs)
-    img_urls = []
-
-    if img_tags:
-        img_urls = [img_tag.get('data-src')
-            for img_tag in img_tags if img_tag.get('data-src')]
-
-    if img_urls:
-        top_img_url = img_urls[0]
-
-        if len(img_urls) > 1:
-            top_img_url = img_urls[1]
-
-        article.set_top_img_no_check(top_img_url)
-        article.set_imgs(set(img_urls))
+def clean_text(text):
+    text = re.sub('[ \t]+', '', text)
+    text = re.sub(r'([\r\n]+.?)+', r'\r\n', text)
+    return text
 
 def extract_by_newspaper(url):
     article = Article(url, language='zh')
@@ -56,12 +44,11 @@ def extract_by_newspaper(url):
     print("------------- TITLE --------------")
     print(article.title)
     print("------------- CONTENT --------------")
-    print(article.text)
+    print(clean_text(article.text))
     print("-------------- IMAGE ---------------")
     if not article.top_image:
-        weixin_reg = re.compile('.*mp.weixin.qq.com.*')
-        if weixin_reg.match(article.url):
-            fetch_weixin_top_image(article)
+        if weixin_extractor.is_weixin(article.url):
+            weixin_extractor.fill_top_image(article)
 
     print(article.top_image)
 
