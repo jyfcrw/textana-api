@@ -33,6 +33,7 @@ def main():
 def clean_text(text):
     text = re.sub('[ \t]+', '', text)
     text = re.sub(r'([\r\n]+.?)+', r'\r\n', text)
+    text = text.strip()
     return text
 
 def extract_by_newspaper(url):

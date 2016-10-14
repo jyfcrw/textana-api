@@ -129,6 +129,7 @@ class TextAnalysisResource(KoltextanaResource):
     def clean_text(self, text):
         text = re.sub('[ \t]+', '', text)
         text = re.sub(r'([\r\n]+.?)+', r'\r\n', text)
+        text = text.strip()
         return text
 
     def get_errors(self, input_para):
