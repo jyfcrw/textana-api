@@ -1,5 +1,5 @@
-from .weixin_image import WeixinImage
 import re
+from .weixin_image import WeixinImage
 
 def is_weixin(url):
     weixin_reg = re.compile('.*mp.weixin.qq.com.*')

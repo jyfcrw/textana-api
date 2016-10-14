@@ -1,8 +1,7 @@
-from readability    import Readability
-import requests
-import chardet
+# from readability    import Readability
+# import requests
+# import chardet
 import re
-
 from extractor import weixin_extractor
 from newspaper import Article
 

@@ -13,6 +13,7 @@ from flask.ext.cors import CORS
 import operator
 
 from newspaper import Article
+from extractor import weixin_extractor
 import re
 
 def infer_industries(entities):
@@ -103,7 +104,7 @@ class TextAnalysisResource(KoltextanaResource):
         elif input_para["url"]:
             article = self.text_extract(input_para["url"])
             result = self.text_analyze(article.text)
-            result["article_text"] = article.text
+            result["article_text"] = self.clean_text(article.text)
             result["article_title"] = article.title
             result["article_image"] = article.top_image
 
@@ -120,29 +121,15 @@ class TextAnalysisResource(KoltextanaResource):
         article.parse()
 
         if not article.top_image:
-            weixin_reg = re.compile('.*mp.weixin.qq.com.*')
-            if weixin_reg.match(article.url):
-                self.fetch_weixin_top_image(article)
+            if weixin_extractor.is_weixin(article.url):
+                weixin_extractor.fill_top_image(article)
 
         return article
 
-    def fetch_weixin_top_image(self, article):
-        img_kwargs = {'tag': 'img', 'attr': 'data-src'}
-        img_tags = article.extractor.parser.getElementsByTag(article.clean_doc, **img_kwargs)
-        img_urls = []
-
-        if img_tags:
-            img_urls = [img_tag.get('data-src')
-                for img_tag in img_tags if img_tag.get('data-src')]
-
-        if img_urls:
-            top_img_url = img_urls[0]
-
-            if len(img_urls) > 1:
-                top_img_url = img_urls[1]
-
-            article.set_top_img_no_check(top_img_url)
-            article.set_imgs(set(img_urls))
+    def clean_text(self, text):
+        text = re.sub('[ \t]+', '', text)
+        text = re.sub(r'([\r\n]+.?)+', r'\r\n', text)
+        return text
 
     def get_errors(self, input_para):
         """Check for input errors."""
